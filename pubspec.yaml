@@ -1,0 +1,14 @@
+name: injectable_application
+version: 0.1.0
+author: Christophe Hurpeau <christophe@hurpeau.com>
+description: Inject classes in a Dart Application
+homepage: https://github.com/christophehurpeau/dart-injectable_application
+documentation: https://github.com/christophehurpeau/dart-injectable_application/wiki
+
+environment:
+  sdk: ">=1.1.0 <2.0.0"
+
+dependencies:
+  unittest: '>=0.9.0 <0.10.0'
+  di: '>=0.0.32'
+
