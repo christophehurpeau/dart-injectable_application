@@ -1,23 +1,24 @@
 # Go to project > Repository and set the branch filter
+# Then click on "View Key" and paste it on github
 # Go to project build & test and set the comand "sh drone_io.sh
 
 pub install
 
-# ensure that the code is warning free
+echo "> Ensure that the code is warning free"
 dartanalyzer test/test.dart
 dartanalyzer lib/injectable_application.dart
 
-# run tests
+echo "> Run tests"
 dart --enable-type-checks --enable-asserts test/test.dart
 
-# gen docs
+echo "> Generate docs"
 dartdoc lib/injectable_application.dart --package-root=packages
 
-# copy docs up to github gh-pages branch
+echo "> Copy docs up to github gh-pages branch"
 git checkout gh-pages
 date > date.txt
-rm -rf $(ls * | grep -v docs)
-cd docs/* ..
+rm -rf $(ls * | grep -v docs | grep -v params.json)
+mv docs/* ..
 git add -A
 git commit -m"auto commit from drone.io"
 git remote set-url origin git@github.com:christophehurpeau/dart-injectable_application.git
