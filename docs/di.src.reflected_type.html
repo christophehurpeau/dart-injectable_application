@@ -1,0 +1,62 @@
+        <!DOCTYPE html>
+        <html>
+        <head>
+                <meta charset="utf-8">
+        <title>di.src.reflected_type Library / Dart Documentation</title>
+        <link rel="stylesheet" type="text/css"
+            href="styles.css">
+        <link href="//fonts.googleapis.com/css?family=Open+Sans:400,600,700,800" rel="stylesheet" type="text/css">
+        <link rel="shortcut icon" href="favicon.ico">
+        
+        </head>
+        <body data-library="di.src.reflected_type">
+        <div class="page">
+        <div class="header">
+          <a href="index.html"><div class="logo"></div></a>
+          <a href="index.html">Dart Documentation</a>
+         &rsaquo; <a href="di.src.reflected_type.html">di.src.reflected_type</a>        <div id="search-box">
+          <input type="search" name="q" id="q" autocomplete="off"
+              class="search-input" placeholder="Search API">
+        </div>
+        
+      </div>
+      <div class="drop-down" id="drop-down"></div>
+      
+        <div class="nav">
+        
+</div>
+<div class="content">
+<h2><strong>di.src.reflected_type</strong> library</h2>
+<div>
+<h3>Functions</h3>
+<div class="method"><h4 id="getReflectedTypeWorkaround">
+<button class="show-code">Code</button>
+Type <strong>getReflectedTypeWorkaround</strong>(ClassMirror cls) <a class="anchor-link" href="#getReflectedTypeWorkaround"
+              title="Permalink to getReflectedTypeWorkaround">#</a></h4>
+<div class="doc">
+<pre class="source">
+Type getReflectedTypeWorkaround(ClassMirror cls) {
+ // On Dart VM, just return reflectedType.
+ if (1.0 is! int) return cls.reflectedType;
+ if (!cls.isOriginalDeclaration) {
+   cls = cls.originalDeclaration;
+ }
+ if (_cache[cls] == null) {
+   var mangledName = reflect(cls).getField(_mangledNameField).reflectee;
+   _cache[cls] = _jsHelper.invoke(#createRuntimeType, [mangledName]).reflectee;
+ }
+ return _cache[cls];
+}
+</pre>
+</div>
+</div>
+</div>
+        </div>
+        <div class="clear"></div>
+        </div>
+        <div class="footer">
+          <div>This page was generated at 2014-02-10 12:24:02.556</div>
+        </div>
+        <script async src="client-live-nav.js"></script>
+        </body></html>
+        

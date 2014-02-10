@@ -1,0 +1,354 @@
+        <!DOCTYPE html>
+        <html>
+        <head>
+                <meta charset="utf-8">
+        <title>DynamicInjector class / di.dynamic_injector Library / Dart Documentation</title>
+        <link rel="stylesheet" type="text/css"
+            href="../styles.css">
+        <link href="//fonts.googleapis.com/css?family=Open+Sans:400,600,700,800" rel="stylesheet" type="text/css">
+        <link rel="shortcut icon" href="../favicon.ico">
+        
+        </head>
+        <body data-library="di.dynamic_injector" data-type="DynamicInjector">
+        <div class="page">
+        <div class="header">
+          <a href="../index.html"><div class="logo"></div></a>
+          <a href="../index.html">Dart Documentation</a>
+         &rsaquo; <a href="../di.dynamic_injector.html">di.dynamic_injector</a> &rsaquo; <a href="../di.dynamic_injector/DynamicInjector.html">DynamicInjector</a>        <div id="search-box">
+          <input type="search" name="q" id="q" autocomplete="off"
+              class="search-input" placeholder="Search API">
+        </div>
+        
+      </div>
+      <div class="drop-down" id="drop-down"></div>
+      
+        <div class="nav">
+        
+</div>
+<div class="content">
+        <h2><strong>DynamicInjector</strong>
+          class
+        </h2>
+        
+<button id="show-inherited" class="show-inherited">Hide inherited</button>
+<div class="doc">
+<p>Dynamic implementation of <a class="crossref" href="../di/Injector.html">Injector</a> that uses mirrors.</p>
+<pre class="source">
+class DynamicInjector extends Injector {
+
+ DynamicInjector({List&lt;Module&gt; modules, String name,
+                 bool allowImplicitInjection: false})
+     : super(modules: modules, name: name,
+         allowImplicitInjection: allowImplicitInjection);
+
+ DynamicInjector._fromParent(List&lt;Module&gt; modules, Injector parent, {name})
+     : super.fromParent(modules, parent, name: name);
+
+ newFromParent(List&lt;Module&gt; modules, String name) {
+   return new DynamicInjector._fromParent(modules, this, name: name);
+ }
+
+ Object newInstanceOf(Type type, ObjectFactory getInstanceByType,
+                      Injector requestor, error) {
+   var classMirror = reflectType(type);
+   if (classMirror is TypedefMirror) {
+     throw new NoProviderError(error('No implementation provided '
+         'for ${getSymbolName(classMirror.qualifiedName)} typedef!'));
+   }
+
+   MethodMirror ctor = classMirror.declarations[classMirror.simpleName];
+
+   resolveArgument(int pos) {
+     ParameterMirror p = ctor.parameters[pos];
+     if (p.type is TypedefMirror) {
+       throw new NoProviderError(
+           error('Cannot create new instance of a typedef ${p.type}'));
+     }
+     return getInstanceByType(getReflectedTypeWorkaround(p.type), requestor);
+   }
+
+   var args = new List.generate(ctor.parameters.length, resolveArgument,
+       growable: false);
+   return classMirror.newInstance(ctor.constructorName, args).reflectee;
+ }
+
+ /**
+  * Invoke given function and inject all its arguments.
+  *
+  * Returns whatever the function returns.
+  */
+ dynamic invoke(Function fn) {
+   ClosureMirror cm = reflect(fn);
+   MethodMirror mm = cm.function;
+   int position = 0;
+   List args = mm.parameters.map((ParameterMirror parameter) {
+     try {
+       return get(getReflectedTypeWorkaround(parameter.type));
+     } on NoProviderError catch (e) {
+       throw new NoProviderError(e.message);
+     } finally {
+       position++;
+     }
+   }).toList();
+
+   return cm.apply(args).reflectee;
+ }
+}
+</pre>
+</div>
+<h3>Extends</h3>
+<p>
+<span class="type-box"><span class="icon-class"></span><a href="../di/Injector.html">Injector</a></span>&nbsp;&gt;&nbsp;<span class="type-box"><span class="icon-class"></span><strong>DynamicInjector</strong></span></p>
+<div>
+<h3>Constructors</h3>
+<div class="method"><h4 id="">
+<button class="show-code">Code</button>
+new <strong>DynamicInjector</strong>({List&lt;<a href="../di/Module.html">Module</a>&gt; modules, String name, bool allowImplicitInjection: false}) <a class="anchor-link" href="#"
+              title="Permalink to DynamicInjector.DynamicInjector">#</a></h4>
+<div class="doc">
+<div class="inherited">
+<p>Creates a new <code>Object</code> instance.</p>
+<p><code>Object</code> instances have no meaningful state, and are only useful
+through their identity. An <code>Object</code> instance is equal to itself
+only.</p>
+<div class="docs-inherited-from">docs inherited from Object </div></div>
+<pre class="source">
+DynamicInjector({List&lt;Module&gt; modules, String name,
+               bool allowImplicitInjection: false})
+   : super(modules: modules, name: name,
+       allowImplicitInjection: allowImplicitInjection);
+</pre>
+</div>
+</div>
+</div>
+<div class="inherited">
+<h3>Properties</h3>
+<div class="field inherited"><h4 id="allowImplicitInjection">
+<button class="show-code">Code</button>
+final bool         <strong>allowImplicitInjection</strong> <a class="anchor-link"
+            href="#allowImplicitInjection"
+            title="Permalink to DynamicInjector.allowImplicitInjection">#</a>
+        </h4>
+        <div class="inherited-from">inherited from <a href="../di/Injector.html">Injector</a> </div><div class="doc">
+<pre class="source">
+final bool allowImplicitInjection
+</pre>
+</div>
+</div>
+<div class="field inherited"><h4 id="instances">
+<button class="show-code">Code</button>
+final Map&lt;Type, Object&gt;         <strong>instances</strong> <a class="anchor-link"
+            href="#instances"
+            title="Permalink to DynamicInjector.instances">#</a>
+        </h4>
+        <div class="inherited-from">inherited from <a href="../di/Injector.html">Injector</a> </div><div class="doc">
+<pre class="source">
+final Map&lt;Type, Object&gt; instances = &lt;Type, Object&gt;{}
+</pre>
+</div>
+</div>
+<div class="field inherited"><h4 id="name">
+<button class="show-code">Code</button>
+final String         <strong>name</strong> <a class="anchor-link"
+            href="#name"
+            title="Permalink to DynamicInjector.name">#</a>
+        </h4>
+        <div class="inherited-from">inherited from <a href="../di/Injector.html">Injector</a> </div><div class="doc">
+<p>Name of the injector or null of none is given.</p>
+<pre class="source">
+final String name
+</pre>
+</div>
+</div>
+<div class="field inherited"><h4 id="parent">
+<button class="show-code">Code</button>
+final <a href="../di/Injector.html">Injector</a>         <strong>parent</strong> <a class="anchor-link"
+            href="#parent"
+            title="Permalink to DynamicInjector.parent">#</a>
+        </h4>
+        <div class="inherited-from">inherited from <a href="../di/Injector.html">Injector</a> </div><div class="doc">
+<p>Returns the parent injector or null if root.</p>
+<pre class="source">
+final Injector parent
+</pre>
+</div>
+</div>
+<div class="field inherited"><h4 id="resolving">
+<button class="show-code">Code</button>
+final List&lt;Type&gt;         <strong>resolving</strong> <a class="anchor-link"
+            href="#resolving"
+            title="Permalink to DynamicInjector.resolving">#</a>
+        </h4>
+        <div class="inherited-from">inherited from <a href="../di/Injector.html">Injector</a> </div><div class="doc">
+<pre class="source">
+final List&lt;Type&gt; resolving = &lt;Type&gt;[]
+</pre>
+</div>
+</div>
+<div class="field inherited"><h4 id="root">
+<button class="show-code">Code</button>
+final <a href="../di/Injector.html">Injector</a>         <strong>root</strong> <a class="anchor-link"
+            href="#root"
+            title="Permalink to DynamicInjector.root">#</a>
+        </h4>
+        <div class="inherited-from">inherited from <a href="../di/Injector.html">Injector</a> </div><div class="doc">
+<pre class="source">
+Injector get root =&gt; _root;
+</pre>
+</div>
+</div>
+<div class="field inherited"><h4 id="types">
+<button class="show-code">Code</button>
+final Set&lt;Type&gt;         <strong>types</strong> <a class="anchor-link"
+            href="#types"
+            title="Permalink to DynamicInjector.types">#</a>
+        </h4>
+        <div class="inherited-from">inherited from <a href="../di/Injector.html">Injector</a> </div><div class="doc">
+<pre class="source">
+Set&lt;Type&gt; get types {
+ var types = new Set.from(_types);
+ var parent = this.parent;
+ while (parent != null) {
+   types.addAll(parent._types);
+   parent = parent.parent;
+ }
+ return types;
+}
+</pre>
+</div>
+</div>
+</div>
+<div>
+<h3>Methods</h3>
+<div class="method inherited"><h4 id="createChild">
+<button class="show-code">Code</button>
+<a href="../di/Injector.html">Injector</a> <strong>createChild</strong>(List&lt;<a href="../di/Module.html">Module</a>&gt; modules, {List&lt;Type&gt; forceNewInstances, String name}) <a class="anchor-link" href="#createChild"
+              title="Permalink to DynamicInjector.createChild">#</a></h4>
+<div class="inherited-from">inherited from <a href="../di/Injector.html">Injector</a> </div><div class="doc">
+<p>Create a child injector.</p>
+<p>Child injector can override any bindings by adding additional modules.</p>
+<p>It also accepts a list of tokens that a new instance should be forced.
+That means, even if some parent injector already has an instance for this
+token, there will be a new instance created in the child injector.</p>
+<pre class="source">
+Injector createChild(List&lt;Module&gt; modules,
+                    {List&lt;Type&gt; forceNewInstances, String name}) {
+ if (forceNewInstances != null) {
+   Module forceNew = new Module();
+   forceNewInstances.forEach((type) {
+     var providerWithInjector = _getProviderWithInjectorForType(type);
+     var provider = providerWithInjector.provider;
+     forceNew.factory(type,
+         (Injector inj) =&gt; provider.get(this, inj, inj._getInstanceByType,
+             inj._error),
+         creation: provider.creationStrategy,
+         visibility: provider.visibility);
+   });
+
+   modules = modules.toList(); // clone
+   modules.add(forceNew);
+ }
+
+ return newFromParent(modules, name);
+}
+</pre>
+</div>
+</div>
+<div class="method inherited"><h4 id="get">
+<button class="show-code">Code</button>
+dynamic <strong>get</strong>(Type type) <a class="anchor-link" href="#get"
+              title="Permalink to DynamicInjector.get">#</a></h4>
+<div class="inherited-from">inherited from <a href="../di/Injector.html">Injector</a> </div><div class="doc">
+<p>Get an instance for given token (<code>Type</code>).</p>
+<p>If the injector already has an instance for this token, it returns this
+instance. Otherwise, injector resolves all its dependencies, instantiate
+new instance and returns this instance.</p>
+<p>If there is no binding for given token, injector asks parent injector.</p>
+<p>If there is no parent injector, an implicit binding is used. That is,
+the token (<code>Type</code>) is instantiated.</p>
+<pre class="source">
+dynamic get(Type type) =&gt; _getInstanceByType(type, this);
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="invoke">
+<button class="show-code">Code</button>
+dynamic <strong>invoke</strong>(Function fn) <a class="anchor-link" href="#invoke"
+              title="Permalink to DynamicInjector.invoke">#</a></h4>
+<div class="doc">
+<p>Invoke given function and inject all its arguments.</p>
+<p>Returns whatever the function returns.</p>
+<pre class="source">
+dynamic invoke(Function fn) {
+ ClosureMirror cm = reflect(fn);
+ MethodMirror mm = cm.function;
+ int position = 0;
+ List args = mm.parameters.map((ParameterMirror parameter) {
+   try {
+     return get(getReflectedTypeWorkaround(parameter.type));
+   } on NoProviderError catch (e) {
+     throw new NoProviderError(e.message);
+   } finally {
+     position++;
+   }
+ }).toList();
+
+ return cm.apply(args).reflectee;
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="newFromParent">
+<button class="show-code">Code</button>
+dynamic <strong>newFromParent</strong>(List&lt;<a href="../di/Module.html">Module</a>&gt; modules, String name) <a class="anchor-link" href="#newFromParent"
+              title="Permalink to DynamicInjector.newFromParent">#</a></h4>
+<div class="doc">
+<pre class="source">
+newFromParent(List&lt;Module&gt; modules, String name) {
+ return new DynamicInjector._fromParent(modules, this, name: name);
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="newInstanceOf">
+<button class="show-code">Code</button>
+Object <strong>newInstanceOf</strong>(Type type, <a href="../di/ObjectFactory.html">ObjectFactory</a> getInstanceByType, <a href="../di/Injector.html">Injector</a> requestor, error) <a class="anchor-link" href="#newInstanceOf"
+              title="Permalink to DynamicInjector.newInstanceOf">#</a></h4>
+<div class="doc">
+<pre class="source">
+Object newInstanceOf(Type type, ObjectFactory getInstanceByType,
+                    Injector requestor, error) {
+ var classMirror = reflectType(type);
+ if (classMirror is TypedefMirror) {
+   throw new NoProviderError(error('No implementation provided '
+       'for ${getSymbolName(classMirror.qualifiedName)} typedef!'));
+ }
+
+ MethodMirror ctor = classMirror.declarations[classMirror.simpleName];
+
+ resolveArgument(int pos) {
+   ParameterMirror p = ctor.parameters[pos];
+   if (p.type is TypedefMirror) {
+     throw new NoProviderError(
+         error('Cannot create new instance of a typedef ${p.type}'));
+   }
+   return getInstanceByType(getReflectedTypeWorkaround(p.type), requestor);
+ }
+
+ var args = new List.generate(ctor.parameters.length, resolveArgument,
+     growable: false);
+ return classMirror.newInstance(ctor.constructorName, args).reflectee;
+}
+</pre>
+</div>
+</div>
+</div>
+        </div>
+        <div class="clear"></div>
+        </div>
+        <div class="footer">
+          <div>This page was generated at 2014-02-10 12:24:02.549</div>
+        </div>
+        <script async src="../client-live-nav.js"></script>
+        </body></html>
+        

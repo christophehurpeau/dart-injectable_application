@@ -1,0 +1,195 @@
+        <!DOCTYPE html>
+        <html>
+        <head>
+                <meta charset="utf-8">
+        <title>Module class / di Library / Dart Documentation</title>
+        <link rel="stylesheet" type="text/css"
+            href="../styles.css">
+        <link href="//fonts.googleapis.com/css?family=Open+Sans:400,600,700,800" rel="stylesheet" type="text/css">
+        <link rel="shortcut icon" href="../favicon.ico">
+        
+        </head>
+        <body data-library="di" data-type="Module">
+        <div class="page">
+        <div class="header">
+          <a href="../index.html"><div class="logo"></div></a>
+          <a href="../index.html">Dart Documentation</a>
+         &rsaquo; <a href="../di.html">di</a> &rsaquo; <a href="../di/Module.html">Module</a>        <div id="search-box">
+          <input type="search" name="q" id="q" autocomplete="off"
+              class="search-input" placeholder="Search API">
+        </div>
+        
+      </div>
+      <div class="drop-down" id="drop-down"></div>
+      
+        <div class="nav">
+        
+</div>
+<div class="content">
+        <h2><strong>Module</strong>
+          class
+        </h2>
+        
+<button id="show-inherited" class="show-inherited">Hide inherited</button>
+<div class="doc">
+<p>A collection of type bindings. Once the module is passed into the injector,
+the injector creates a copy of the module and all subsequent changes to the
+module have no effect.</p>
+<pre class="source">
+class Module {
+ final Map&lt;Type, _Provider&gt; _providers = &lt;Type, _Provider&gt;{};
+ final List&lt;Module&gt; _childModules = &lt;Module&gt;[];
+
+ Map&lt;Type, _Provider&gt; _providersCache;
+
+ /**
+  * Compiles and returs bindings map by performing depth-first traversal of the
+  * child (installed) modules.
+  */
+ Map&lt;Type, _Provider&gt; get _bindings {
+   if (_isDirty) {
+     _providersCache = &lt;Type, _Provider&gt;{};
+     _childModules.forEach((child) =&gt; _providersCache.addAll(child._bindings));
+     _providersCache.addAll(_providers);
+   }
+   return _providersCache;
+ }
+
+ /**
+  * Register binding to a concrete value.
+  *
+  * The [value] is what actually will be injected.
+  */
+ void value(Type id, value,
+     {CreationStrategy creation, Visibility visibility}) {
+   _dirty();
+   _providers[id] = new _ValueProvider(value, creation, visibility);
+ }
+
+ /**
+  * Register binding to a [Type].
+  *
+  * The [implementedBy] will be instantiated using [new] operator and the
+  * resulting instance will be injected. If no type is provided, then it's
+  * implied that [id] should be instantiated.
+  */
+ void type(Type id, {Type implementedBy, CreationStrategy creation,
+     Visibility visibility}) {
+   _dirty();
+   _providers[id] = new _TypeProvider(
+       implementedBy == null ? id : implementedBy, creation, visibility);
+ }
+
+ /**
+  * Register binding to a factory function.abstract
+  *
+  * The [factoryFn] will be called and all its arguments will get injected.
+  * The result of that function is the value that will be injected.
+  */
+ void factory(Type id, FactoryFn factoryFn,
+     {CreationStrategy creation, Visibility visibility}) {
+   _dirty();
+   _providers[id] = new _FactoryProvider(factoryFn, creation, visibility);
+ }
+
+ /**
+  * Installs another module into this module. Bindings defined on this module
+  * take precidence over the installed module.
+  */
+ void install(Module module) {
+   _childModules.add(module);
+   _dirty();
+ }
+
+ _dirty() {
+   _providersCache = null;
+ }
+
+ bool get _isDirty =&gt;
+     _providersCache == null || _childModules.any((m) =&gt; m._isDirty);
+}
+</pre>
+</div>
+<div>
+<h3>Methods</h3>
+<div class="method"><h4 id="factory">
+<button class="show-code">Code</button>
+void <strong>factory</strong>(Type id, <a href="../di/FactoryFn.html">FactoryFn</a> factoryFn, {<a href="../di/CreationStrategy.html">CreationStrategy</a> creation, <a href="../di/Visibility.html">Visibility</a> visibility}) <a class="anchor-link" href="#factory"
+              title="Permalink to Module.factory">#</a></h4>
+<div class="doc">
+<p>Register binding to a factory function.abstract</p>
+<p>The 
+<span class="param">factoryFn</span> will be called and all its arguments will get injected.
+The result of that function is the value that will be injected.</p>
+<pre class="source">
+void factory(Type id, FactoryFn factoryFn,
+   {CreationStrategy creation, Visibility visibility}) {
+ _dirty();
+ _providers[id] = new _FactoryProvider(factoryFn, creation, visibility);
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="install">
+<button class="show-code">Code</button>
+void <strong>install</strong>(<a href="../di/Module.html">Module</a> module) <a class="anchor-link" href="#install"
+              title="Permalink to Module.install">#</a></h4>
+<div class="doc">
+<p>Installs another module into this module. Bindings defined on this module
+take precidence over the installed module.</p>
+<pre class="source">
+void install(Module module) {
+ _childModules.add(module);
+ _dirty();
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="type">
+<button class="show-code">Code</button>
+void <strong>type</strong>(Type id, {Type implementedBy, <a href="../di/CreationStrategy.html">CreationStrategy</a> creation, <a href="../di/Visibility.html">Visibility</a> visibility}) <a class="anchor-link" href="#type"
+              title="Permalink to Module.type">#</a></h4>
+<div class="doc">
+<p>Register binding to a <code>Type</code>.</p>
+<p>The 
+<span class="param">implementedBy</span> will be instantiated using <code>new</code> operator and the
+resulting instance will be injected. If no type is provided, then it's
+implied that 
+<span class="param">id</span> should be instantiated.</p>
+<pre class="source">
+void type(Type id, {Type implementedBy, CreationStrategy creation,
+   Visibility visibility}) {
+ _dirty();
+ _providers[id] = new _TypeProvider(
+     implementedBy == null ? id : implementedBy, creation, visibility);
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="value">
+<button class="show-code">Code</button>
+void <strong>value</strong>(Type id, value, {<a href="../di/CreationStrategy.html">CreationStrategy</a> creation, <a href="../di/Visibility.html">Visibility</a> visibility}) <a class="anchor-link" href="#value"
+              title="Permalink to Module.value">#</a></h4>
+<div class="doc">
+<p>Register binding to a concrete value.</p>
+<p>The 
+<span class="param">value</span> is what actually will be injected.</p>
+<pre class="source">
+void value(Type id, value,
+   {CreationStrategy creation, Visibility visibility}) {
+ _dirty();
+ _providers[id] = new _ValueProvider(value, creation, visibility);
+}
+</pre>
+</div>
+</div>
+</div>
+        </div>
+        <div class="clear"></div>
+        </div>
+        <div class="footer">
+          <div>This page was generated at 2014-02-10 12:24:02.453</div>
+        </div>
+        <script async src="../client-live-nav.js"></script>
+        </body></html>
+        

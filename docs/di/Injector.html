@@ -1,0 +1,477 @@
+        <!DOCTYPE html>
+        <html>
+        <head>
+                <meta charset="utf-8">
+        <title>Injector class / di Library / Dart Documentation</title>
+        <link rel="stylesheet" type="text/css"
+            href="../styles.css">
+        <link href="//fonts.googleapis.com/css?family=Open+Sans:400,600,700,800" rel="stylesheet" type="text/css">
+        <link rel="shortcut icon" href="../favicon.ico">
+        
+        </head>
+        <body data-library="di" data-type="Injector">
+        <div class="page">
+        <div class="header">
+          <a href="../index.html"><div class="logo"></div></a>
+          <a href="../index.html">Dart Documentation</a>
+         &rsaquo; <a href="../di.html">di</a> &rsaquo; <a href="../di/Injector.html">Injector</a>        <div id="search-box">
+          <input type="search" name="q" id="q" autocomplete="off"
+              class="search-input" placeholder="Search API">
+        </div>
+        
+      </div>
+      <div class="drop-down" id="drop-down"></div>
+      
+        <div class="nav">
+        
+</div>
+<div class="content">
+        <h2><strong>Injector</strong>
+          class
+        </h2>
+        
+<button id="show-inherited" class="show-inherited">Hide inherited</button>
+<div class="doc">
+<pre class="source">
+class Injector {
+
+ /**
+  * Name of the injector or null of none is given.
+  */
+ final String name;
+
+ static const List&lt;Type&gt; _PRIMITIVE_TYPES = const &lt;Type&gt;[
+   num, int, double, String, bool
+ ];
+
+ /**
+  * Returns the parent injector or null if root.
+  */
+ final Injector parent;
+
+ Injector _root;
+
+ Map&lt;Type, _Provider&gt; _providers = &lt;Type, _Provider&gt;{};
+
+ final Map&lt;Type, Object&gt; instances = &lt;Type, Object&gt;{};
+
+ final List&lt;Type&gt; resolving = &lt;Type&gt;[];
+
+ final bool allowImplicitInjection;
+
+ Iterable&lt;Type&gt; _typesCache;
+
+ /**
+  * List of all types which the injector can return
+  */
+ Iterable&lt;Type&gt; get _types {
+   if (_typesCache == null) {
+     _typesCache = _providers.keys;
+   }
+   return _typesCache;
+ }
+
+ Injector({List&lt;Module&gt; modules, String name,
+          bool allowImplicitInjection: false})
+     : this.fromParent(modules, null,
+         name: name, allowImplicitInjection: allowImplicitInjection);
+
+ Injector.fromParent(List&lt;Module&gt; modules,
+     Injector this.parent, {this.name, this.allowImplicitInjection}) {
+   _root = parent == null ? this : parent._root;
+   if (modules != null) {
+     modules.forEach((module) {
+       _providers.addAll(module._bindings);
+     });
+   }
+   _providers[Injector] = new _ValueProvider(this);
+ }
+
+ Injector get root =&gt; _root;
+
+ Set&lt;Type&gt; get types {
+   var types = new Set.from(_types);
+   var parent = this.parent;
+   while (parent != null) {
+     types.addAll(parent._types);
+     parent = parent.parent;
+   }
+   return types;
+ }
+
+ String _error(message, [appendDependency]) {
+   if (appendDependency != null) {
+     resolving.add(appendDependency);
+   }
+
+   String graph = resolving.join(' -&gt; ');
+
+   resolving.clear();
+
+   return '$message (resolving $graph)';
+ }
+
+ dynamic _getInstanceByType(Type typeName, Injector requester) {
+   _checkTypeConditions(typeName);
+
+   if (resolving.contains(typeName)) {
+     throw new CircularDependencyError(
+         _error('Cannot resolve a circular dependency!', typeName));
+   }
+
+   var providerWithInjector = _getProviderWithInjectorForType(typeName);
+   var provider = providerWithInjector.provider;
+   var injector = providerWithInjector.injector;
+   var visible = provider.visibility != null ?
+       provider.visibility(requester, injector) :
+       _defaultVisibility(requester, injector);
+
+   if (visible &amp;&amp; instances.containsKey(typeName)) {
+     return instances[typeName];
+   }
+
+   if (providerWithInjector.injector != this || !visible) {
+     if (!visible) {
+       if (injector.parent == null) {
+         throw new NoProviderError(
+             _error('No provider found for ${typeName}!', typeName));
+       }
+       injector =
+           injector.parent._getProviderWithInjectorForType(typeName).injector;
+     }
+     return injector._getInstanceByType(typeName, requester);
+   }
+
+   var value;
+   try {
+     var strategy = provider.creationStrategy != null ?
+         provider.creationStrategy : _defaultCreationStrategy;
+     value = strategy(requester, injector, () {
+       resolving.add(typeName);
+       var val = provider.get(this, requester, _getInstanceByType, _error);
+       resolving.removeLast();
+       return val;
+     });
+   } catch(e) {
+     resolving.clear();
+     rethrow;
+   }
+
+   // cache the value.
+   providerWithInjector.injector.instances[typeName] = value;
+   return value;
+ }
+
+ /// Returns a pair for provider and the injector where it's defined.
+ _ProviderWithDefiningInjector _getProviderWithInjectorForType(Type typeName) {
+   if (_providers.containsKey(typeName)) {
+     return new _ProviderWithDefiningInjector(_providers[typeName], this);
+   }
+
+   if (parent != null) {
+     return parent._getProviderWithInjectorForType(typeName);
+   }
+
+   if (allowImplicitInjection) {
+     return new _ProviderWithDefiningInjector(
+         new _TypeProvider(typeName), this);
+   }
+
+   throw new NoProviderError(_error('No provider found for '
+       '${typeName}!', typeName));
+ }
+
+ void _checkTypeConditions(Type typeName) {
+   if (_PRIMITIVE_TYPES.contains(typeName)) {
+     throw new NoProviderError(_error('Cannot inject a primitive type '
+         'of $typeName!', typeName));
+   }
+ }
+
+
+ // PUBLIC API
+
+ /**
+  * Get an instance for given token ([Type]).
+  *
+  * If the injector already has an instance for this token, it returns this
+  * instance. Otherwise, injector resolves all its dependencies, instantiate
+  * new instance and returns this instance.
+  *
+  * If there is no binding for given token, injector asks parent injector.
+  *
+  * If there is no parent injector, an implicit binding is used. That is,
+  * the token ([Type]) is instantiated.
+  */
+ dynamic get(Type type) =&gt; _getInstanceByType(type, this);
+
+ /**
+  * Create a child injector.
+  *
+  * Child injector can override any bindings by adding additional modules.
+  *
+  * It also accepts a list of tokens that a new instance should be forced.
+  * That means, even if some parent injector already has an instance for this
+  * token, there will be a new instance created in the child injector.
+  */
+ Injector createChild(List&lt;Module&gt; modules,
+                      {List&lt;Type&gt; forceNewInstances, String name}) {
+   if (forceNewInstances != null) {
+     Module forceNew = new Module();
+     forceNewInstances.forEach((type) {
+       var providerWithInjector = _getProviderWithInjectorForType(type);
+       var provider = providerWithInjector.provider;
+       forceNew.factory(type,
+           (Injector inj) =&gt; provider.get(this, inj, inj._getInstanceByType,
+               inj._error),
+           creation: provider.creationStrategy,
+           visibility: provider.visibility);
+     });
+
+     modules = modules.toList(); // clone
+     modules.add(forceNew);
+   }
+
+   return newFromParent(modules, name);
+ }
+
+ newFromParent(List&lt;Module&gt; modules, String name) {
+   throw new UnimplementedError('This method must be overriden.');
+ }
+
+ Object newInstanceOf(Type type, ObjectFactory factory, Injector requestor,
+                      errorHandler(message, [appendDependency])) {
+   throw new UnimplementedError('This method must be overriden.');
+ }
+}
+</pre>
+</div>
+<h3>Subclasses</h3>
+<p>
+<span class="type-box"><span class="icon-class"></span><a href="../di.dynamic_injector/DynamicInjector.html">DynamicInjector</a></span></p>
+<div>
+<h3>Constructors</h3>
+<div class="method"><h4 id="">
+<button class="show-code">Code</button>
+new <strong>Injector</strong>({List&lt;<a href="../di/Module.html">Module</a>&gt; modules, String name, bool allowImplicitInjection: false}) <a class="anchor-link" href="#"
+              title="Permalink to Injector.Injector">#</a></h4>
+<div class="doc">
+<div class="inherited">
+<p>Creates a new <code>Object</code> instance.</p>
+<p><code>Object</code> instances have no meaningful state, and are only useful
+through their identity. An <code>Object</code> instance is equal to itself
+only.</p>
+<div class="docs-inherited-from">docs inherited from Object </div></div>
+<pre class="source">
+Injector({List&lt;Module&gt; modules, String name,
+        bool allowImplicitInjection: false})
+   : this.fromParent(modules, null,
+       name: name, allowImplicitInjection: allowImplicitInjection);
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="fromParent">
+<button class="show-code">Code</button>
+new <strong>Injector.fromParent</strong>(List&lt;<a href="../di/Module.html">Module</a>&gt; modules, <a href="../di/Injector.html">Injector</a> parent, {String name, bool allowImplicitInjection}) <a class="anchor-link" href="#fromParent"
+              title="Permalink to Injector.Injector.fromParent">#</a></h4>
+<div class="doc">
+<pre class="source">
+Injector.fromParent(List&lt;Module&gt; modules,
+   Injector this.parent, {this.name, this.allowImplicitInjection}) {
+ _root = parent == null ? this : parent._root;
+ if (modules != null) {
+   modules.forEach((module) {
+     _providers.addAll(module._bindings);
+   });
+ }
+ _providers[Injector] = new _ValueProvider(this);
+}
+</pre>
+</div>
+</div>
+</div>
+<div>
+<h3>Properties</h3>
+<div class="field"><h4 id="allowImplicitInjection">
+<button class="show-code">Code</button>
+final bool         <strong>allowImplicitInjection</strong> <a class="anchor-link"
+            href="#allowImplicitInjection"
+            title="Permalink to Injector.allowImplicitInjection">#</a>
+        </h4>
+        <div class="doc">
+<pre class="source">
+final bool allowImplicitInjection
+</pre>
+</div>
+</div>
+<div class="field"><h4 id="instances">
+<button class="show-code">Code</button>
+final Map&lt;Type, Object&gt;         <strong>instances</strong> <a class="anchor-link"
+            href="#instances"
+            title="Permalink to Injector.instances">#</a>
+        </h4>
+        <div class="doc">
+<pre class="source">
+final Map&lt;Type, Object&gt; instances = &lt;Type, Object&gt;{}
+</pre>
+</div>
+</div>
+<div class="field"><h4 id="name">
+<button class="show-code">Code</button>
+final String         <strong>name</strong> <a class="anchor-link"
+            href="#name"
+            title="Permalink to Injector.name">#</a>
+        </h4>
+        <div class="doc">
+<p>Name of the injector or null of none is given.</p>
+<pre class="source">
+final String name
+</pre>
+</div>
+</div>
+<div class="field"><h4 id="parent">
+<button class="show-code">Code</button>
+final <a href="../di/Injector.html">Injector</a>         <strong>parent</strong> <a class="anchor-link"
+            href="#parent"
+            title="Permalink to Injector.parent">#</a>
+        </h4>
+        <div class="doc">
+<p>Returns the parent injector or null if root.</p>
+<pre class="source">
+final Injector parent
+</pre>
+</div>
+</div>
+<div class="field"><h4 id="resolving">
+<button class="show-code">Code</button>
+final List&lt;Type&gt;         <strong>resolving</strong> <a class="anchor-link"
+            href="#resolving"
+            title="Permalink to Injector.resolving">#</a>
+        </h4>
+        <div class="doc">
+<pre class="source">
+final List&lt;Type&gt; resolving = &lt;Type&gt;[]
+</pre>
+</div>
+</div>
+<div class="field"><h4 id="root">
+<button class="show-code">Code</button>
+final <a href="../di/Injector.html">Injector</a>         <strong>root</strong> <a class="anchor-link"
+            href="#root"
+            title="Permalink to Injector.root">#</a>
+        </h4>
+        <div class="doc">
+<pre class="source">
+Injector get root =&gt; _root;
+</pre>
+</div>
+</div>
+<div class="field"><h4 id="types">
+<button class="show-code">Code</button>
+final Set&lt;Type&gt;         <strong>types</strong> <a class="anchor-link"
+            href="#types"
+            title="Permalink to Injector.types">#</a>
+        </h4>
+        <div class="doc">
+<pre class="source">
+Set&lt;Type&gt; get types {
+ var types = new Set.from(_types);
+ var parent = this.parent;
+ while (parent != null) {
+   types.addAll(parent._types);
+   parent = parent.parent;
+ }
+ return types;
+}
+</pre>
+</div>
+</div>
+</div>
+<div>
+<h3>Methods</h3>
+<div class="method"><h4 id="createChild">
+<button class="show-code">Code</button>
+<a href="../di/Injector.html">Injector</a> <strong>createChild</strong>(List&lt;<a href="../di/Module.html">Module</a>&gt; modules, {List&lt;Type&gt; forceNewInstances, String name}) <a class="anchor-link" href="#createChild"
+              title="Permalink to Injector.createChild">#</a></h4>
+<div class="doc">
+<p>Create a child injector.</p>
+<p>Child injector can override any bindings by adding additional modules.</p>
+<p>It also accepts a list of tokens that a new instance should be forced.
+That means, even if some parent injector already has an instance for this
+token, there will be a new instance created in the child injector.</p>
+<pre class="source">
+Injector createChild(List&lt;Module&gt; modules,
+                    {List&lt;Type&gt; forceNewInstances, String name}) {
+ if (forceNewInstances != null) {
+   Module forceNew = new Module();
+   forceNewInstances.forEach((type) {
+     var providerWithInjector = _getProviderWithInjectorForType(type);
+     var provider = providerWithInjector.provider;
+     forceNew.factory(type,
+         (Injector inj) =&gt; provider.get(this, inj, inj._getInstanceByType,
+             inj._error),
+         creation: provider.creationStrategy,
+         visibility: provider.visibility);
+   });
+
+   modules = modules.toList(); // clone
+   modules.add(forceNew);
+ }
+
+ return newFromParent(modules, name);
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="get">
+<button class="show-code">Code</button>
+dynamic <strong>get</strong>(Type type) <a class="anchor-link" href="#get"
+              title="Permalink to Injector.get">#</a></h4>
+<div class="doc">
+<p>Get an instance for given token (<code>Type</code>).</p>
+<p>If the injector already has an instance for this token, it returns this
+instance. Otherwise, injector resolves all its dependencies, instantiate
+new instance and returns this instance.</p>
+<p>If there is no binding for given token, injector asks parent injector.</p>
+<p>If there is no parent injector, an implicit binding is used. That is,
+the token (<code>Type</code>) is instantiated.</p>
+<pre class="source">
+dynamic get(Type type) =&gt; _getInstanceByType(type, this);
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="newFromParent">
+<button class="show-code">Code</button>
+dynamic <strong>newFromParent</strong>(List&lt;<a href="../di/Module.html">Module</a>&gt; modules, String name) <a class="anchor-link" href="#newFromParent"
+              title="Permalink to Injector.newFromParent">#</a></h4>
+<div class="doc">
+<pre class="source">
+newFromParent(List&lt;Module&gt; modules, String name) {
+ throw new UnimplementedError('This method must be overriden.');
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="newInstanceOf">
+<button class="show-code">Code</button>
+Object <strong>newInstanceOf</strong>(Type type, <a href="../di/ObjectFactory.html">ObjectFactory</a> factory, <a href="../di/Injector.html">Injector</a> requestor, errorHandler(message, [appendDependency])) <a class="anchor-link" href="#newInstanceOf"
+              title="Permalink to Injector.newInstanceOf">#</a></h4>
+<div class="doc">
+<pre class="source">
+Object newInstanceOf(Type type, ObjectFactory factory, Injector requestor,
+                    errorHandler(message, [appendDependency])) {
+ throw new UnimplementedError('This method must be overriden.');
+}
+</pre>
+</div>
+</div>
+</div>
+        </div>
+        <div class="clear"></div>
+        </div>
+        <div class="footer">
+          <div>This page was generated at 2014-02-10 12:24:02.513</div>
+        </div>
+        <script async src="../client-live-nav.js"></script>
+        </body></html>
+        

@@ -1,0 +1,164 @@
+        <!DOCTYPE html>
+        <html>
+        <head>
+                <meta charset="utf-8">
+        <title>InjectableApplication abstract class / injectable_application Library / Dart Documentation</title>
+        <link rel="stylesheet" type="text/css"
+            href="../styles.css">
+        <link href="//fonts.googleapis.com/css?family=Open+Sans:400,600,700,800" rel="stylesheet" type="text/css">
+        <link rel="shortcut icon" href="../favicon.ico">
+        
+        </head>
+        <body data-library="injectable_application" data-type="InjectableApplication">
+        <div class="page">
+        <div class="header">
+          <a href="../index.html"><div class="logo"></div></a>
+          <a href="../index.html">Dart Documentation</a>
+         &rsaquo; <a href="../injectable_application.html">injectable_application</a> &rsaquo; <a href="../injectable_application/InjectableApplication.html">InjectableApplication</a>        <div id="search-box">
+          <input type="search" name="q" id="q" autocomplete="off"
+              class="search-input" placeholder="Search API">
+        </div>
+        
+      </div>
+      <div class="drop-down" id="drop-down"></div>
+      
+        <div class="nav">
+        
+</div>
+<div class="content">
+        <h2><strong>InjectableApplication</strong>
+          abstract class
+        </h2>
+        
+<button id="show-inherited" class="show-inherited">Hide inherited</button>
+<div class="doc">
+<pre class="source">
+abstract class InjectableApplication {
+ final Module module = new Module();
+ final Module moduleRequestContext = new Module();
+
+ Injector _injector;
+ Injector get injector =&gt; _injector;
+
+ void run() {
+   module.value(InjectableApplication, this);
+   module.value(this.runtimeType, this);
+
+   _injector = new DynamicInjector(modules: [module]);
+
+ }
+
+ void prepareRequestModule(Module requestModule, request);
+
+ Future runAction(InjectableController controller, Type actionType, request) {
+   var requestModule = new Module();
+   prepareRequestModule(requestModule, request);
+
+   var requestContextInjector = injector.createChild(
+       controller.module == null ?
+           [requestModule, moduleRequestContext]
+           : [requestModule, controller.module, moduleRequestContext]
+   );
+
+   InjectableAction action = requestContextInjector.get(actionType);
+   return action.apply(this, request);
+ }
+
+}
+</pre>
+</div>
+<div>
+<h3>Properties</h3>
+<div class="field"><h4 id="injector">
+<button class="show-code">Code</button>
+final <a href="../di/Injector.html">Injector</a>         <strong>injector</strong> <a class="anchor-link"
+            href="#injector"
+            title="Permalink to InjectableApplication.injector">#</a>
+        </h4>
+        <div class="doc">
+<pre class="source">
+Injector get injector =&gt; _injector;
+</pre>
+</div>
+</div>
+<div class="field"><h4 id="module">
+<button class="show-code">Code</button>
+final <a href="../di/Module.html">Module</a>         <strong>module</strong> <a class="anchor-link"
+            href="#module"
+            title="Permalink to InjectableApplication.module">#</a>
+        </h4>
+        <div class="doc">
+<pre class="source">
+final Module module = new Module()
+</pre>
+</div>
+</div>
+<div class="field"><h4 id="moduleRequestContext">
+<button class="show-code">Code</button>
+final <a href="../di/Module.html">Module</a>         <strong>moduleRequestContext</strong> <a class="anchor-link"
+            href="#moduleRequestContext"
+            title="Permalink to InjectableApplication.moduleRequestContext">#</a>
+        </h4>
+        <div class="doc">
+<pre class="source">
+final Module moduleRequestContext = new Module()
+</pre>
+</div>
+</div>
+</div>
+<div>
+<h3>Methods</h3>
+<div class="method"><h4 id="prepareRequestModule">
+abstract void <strong>prepareRequestModule</strong>(<a href="../di/Module.html">Module</a> requestModule, request) <a class="anchor-link" href="#prepareRequestModule"
+              title="Permalink to InjectableApplication.prepareRequestModule">#</a></h4>
+<div class="doc">
+</div>
+</div>
+<div class="method"><h4 id="run">
+<button class="show-code">Code</button>
+void <strong>run</strong>() <a class="anchor-link" href="#run"
+              title="Permalink to InjectableApplication.run">#</a></h4>
+<div class="doc">
+<pre class="source">
+void run() {
+ module.value(InjectableApplication, this);
+ module.value(this.runtimeType, this);
+
+ _injector = new DynamicInjector(modules: [module]);
+
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="runAction">
+<button class="show-code">Code</button>
+Future <strong>runAction</strong>(<a href="../injectable_application/InjectableController.html">InjectableController</a> controller, Type actionType, request) <a class="anchor-link" href="#runAction"
+              title="Permalink to InjectableApplication.runAction">#</a></h4>
+<div class="doc">
+<pre class="source">
+Future runAction(InjectableController controller, Type actionType, request) {
+ var requestModule = new Module();
+ prepareRequestModule(requestModule, request);
+
+ var requestContextInjector = injector.createChild(
+     controller.module == null ?
+         [requestModule, moduleRequestContext]
+         : [requestModule, controller.module, moduleRequestContext]
+ );
+
+ InjectableAction action = requestContextInjector.get(actionType);
+ return action.apply(this, request);
+}
+</pre>
+</div>
+</div>
+</div>
+        </div>
+        <div class="clear"></div>
+        </div>
+        <div class="footer">
+          <div>This page was generated at 2014-02-10 12:24:02.619</div>
+        </div>
+        <script async src="../client-live-nav.js"></script>
+        </body></html>
+        
