@@ -15,10 +15,11 @@ echo "> Generate docs"
 dartdoc lib/injectable_application.dart --package-root=packages
 
 echo "> Copy docs up to github gh-pages branch"
+mv docs docs-tmp
 git checkout gh-pages
-date > date.txt
-rm -rf $(ls * | grep -v docs | grep -v params.json)
-mv docs/* ..
+rm -Rf docs
+mv docs-tmp docs
+date > docs/date.txt
 git add -A
 git commit -m"auto commit from drone.io"
 git remote set-url origin git@github.com:christophehurpeau/dart-injectable_application.git
