@@ -9,6 +9,7 @@ dartanalyzer test/test.dart
 
 echo "\n> Run tests"
 dart --enable-type-checks --enable-asserts test/test.dart
+
 #echo "> Run build"
 #pub build
 

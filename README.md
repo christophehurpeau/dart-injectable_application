@@ -2,4 +2,4 @@
 
 Inject classes in a Dart Application
 
-[Docs](http://christophehurpeau.github.io/dart-injectable_application/docs/injectable_application.html)
+See the [auto-generated docs](http://christophehurpeau.github.io/dart-injectable_application/docs/injectable_application.html)
