@@ -3,19 +3,19 @@
 dart --version
 pub get
 
-echo "> Ensure that the code is warning free"
+echo "\n> Ensure that the code is warning free"
 dartanalyzer lib/injectable_application.dart
 dartanalyzer test/test.dart
 
-echo "> Run tests"
+echo "\n> Run tests"
 dart --enable-type-checks --enable-asserts test/test.dart
 #echo "> Run build"
 #pub build
 
-echo "> Generate docs"
+echo "\n> Generate docs"
 dartdoc lib/injectable_application.dart --package-root=packages
 
-echo "> Copy docs up to github gh-pages branch"
+echo "\n> Copy docs up to github gh-pages branch"
 mv docs docs-tmp
 git checkout gh-pages
 rm -Rf docs
