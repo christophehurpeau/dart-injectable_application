@@ -1,0 +1,1 @@
+{"kind":"library","name":"package:di/mirrors.dart","id":"mirrors","children":[{"returnType":{"name":"String","refId":"dart.core/String"},"kind":"method","name":"getSymbolName","id":"getSymbolName1()","children":[{"ref":{"name":"Symbol","refId":"dart.core/Symbol"},"kind":"param","name":"symbol","id":"symbol"}],"line":"8"}],"uri":"package:di/mirrors.dart","line":"1"}
